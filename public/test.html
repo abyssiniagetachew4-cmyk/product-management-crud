@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product API Test Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 850px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+
+    h1, h2 {
+      color: #222;
+    }
+
+    button {
+      padding: 10px 15px;
+      margin: 5px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background: #2457a7;
+      color: white;
+    }
+
+    input {
+      padding: 10px;
+      width: 90%;
+      margin: 5px 0;
+    }
+
+    .section {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+    }
+
+    pre {
+      background: #222;
+      color: #eee;
+      padding: 15px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Product Management API Test Page</h1>
+  <p>Use the buttons below to test CRUD operations and validation.</p>
+
+  <div class="section">
+    <h2>1. Read Products</h2>
+    <button onclick="getProducts()">Get All Products</button>
+  </div>
+
+  <div class="section">
+    <h2>2. Create Product</h2>
+    <button onclick="createProduct()">Create Test Product</button>
+  </div>
+
+  <div class="section">
+    <h2>3. Read Product by ID</h2>
+    <input id="productId" placeholder="Enter product ID">
+    <button onclick="getProduct()">Get Product</button>
+  </div>
+
+  <div class="section">
+    <h2>4. Update Product</h2>
+    <button onclick="updateProduct()">Update Price and Quantity</button>
+  </div>
+
+  <div class="section">
+    <h2>5. Delete Product</h2>
+    <button onclick="deleteProduct()">Delete Product</button>
+  </div>
+
+  <div class="section">
+    <h2>6. Test Invalid Data</h2>
+    <button onclick="invalidCreate()">Test Invalid Creation</button>
+    <button onclick="invalidUpdate()">Test Invalid Update</button>
+  </div>
+
+  <div class="section">
+    <h2>API Response</h2>
+    <pre id="output">Results will appear here...</pre>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:5000/api/products";
+
+    let currentProductId = "";
+
+    async function request(url, options = {}) {
+      try {
+        const response = await fetch(url, options);
+        const data = await response.json();
+
+        document.getElementById("output").textContent =
+          "HTTP Status: " + response.status +
+          "\n\n" + JSON.stringify(data, null, 2);
+
+        return { response, data };
+      } catch (error) {
+        document.getElementById("output").textContent =
+          "Request failed: " + error.message;
+      }
+    }
+
+    async function getProducts() {
+      await request(API_URL);
+    }
+
+    async function createProduct() {
+      const result = await request(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: "Test Headphones",
+          category: "Electronics",
+          price: 2500,
+          quantity: 12,
+          description: "Test product created from API page"
+        })
+      });
+
+      if (result && result.response.ok) {
+        currentProductId = result.data.product._id;
+        document.getElementById("productId").value = currentProductId;
+      }
+    }
+
+    async function getProduct() {
+      const id = document.getElementById("productId").value.trim();
+
+      if (!id) {
+        alert("Enter a product ID first.");
+        return;
+      }
+
+      await request(`${API_URL}/${id}`);
+    }
+
+    async function updateProduct() {
+      const id = document.getElementById("productId").value.trim();
+
+      if (!id) {
+        alert("Create a product or enter a product ID first.");
+        return;
+      }
+
+      await request(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          price: 3000,
+          quantity: 20
+        })
+      });
+    }
+
+    async function deleteProduct() {
+      const id = document.getElementById("productId").value.trim();
+
+      if (!id) {
+        alert("Enter a product ID first.");
+        return;
+      }
+
+      await request(`${API_URL}/${id}`, {
+        method: "DELETE"
+      });
+    }
+
+    async function invalidCreate() {
+      await request(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productName: "",
+          category: "Electronics",
+          price: -100,
+          quantity: 2.5
+        })
+      });
+    }
+
+    async function invalidUpdate() {
+      const id = document.getElementById("productId").value.trim();
+
+      if (!id) {
+        alert("Enter a product ID first.");
+        return;
+      }
+
+      await request(`${API_URL}/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          price: -500,
+          quantity: -10
+        })
+      });
+    }
+  </script>
+
+</body>
+</html>
